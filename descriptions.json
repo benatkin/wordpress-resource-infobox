@@ -6,7 +6,7 @@
       "fields": [
         {
           "label": "Repository",
-          "param": "repository",
+          "param": "repo",
           "url": "https://github.com/:owner/:repository/"
         },
         {

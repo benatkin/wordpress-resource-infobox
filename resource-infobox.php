@@ -32,7 +32,7 @@ class ResourceInfobox {
 
 	function fetch_rules() {
 		$description_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'descriptions.json';
-		$this->rules = json_decode(file_get_contents($description_file));
+		$this->rules = json_decode(file_get_contents($description_file))->github->repository;
 	}
 
 	function extract_params() {
@@ -55,16 +55,25 @@ class ResourceInfobox {
 		$this->data = json_decode($result);
 	}
 
-	function render_field( $name, $value, $url="" ) {
+	function render_field( $field ) {
+		$label = $field->label;
+		$value = '';
+		$url = '';
+		if ( property_exists( $field, 'param' ) ) {
+			if ( property_exists( $this->params, $field->param ) ) {
+				$value = $this->params->{ $field->param };
+			}
+		}
+
 		$safe_url = esc_url( $url );
 		if ($safe_url) {
 			return '<div class="resource-infobox-field">'
-				. '<span class="resource-infobox-name">' . esc_attr( $name ) . '</span>'
+				. '<span class="resource-infobox-label">' . esc_attr( $label ) . '</span>'
 				. '<a class="resource-infobox-value" href="' . $safe_url . '">'
 				. esc_attr($value) . '</a></div>';
 		} else {
 			return '<div class="resource-infobox-field">'
-				. '<span class="resource-infobox-name">' . esc_attr( $name ) . '</span>'
+				. '<span class="resource-infobox-label">' . esc_attr( $label ) . '</span>'
 				. '<span class="resource-infobox-value">' . esc_attr( $value ) . '</span></div>';
 		}
 	}
@@ -77,14 +86,14 @@ class ResourceInfobox {
 			$last_commit = date('Y-m-d', strtotime($this->data->{'repository'}->{'pushed_at'}));
 		}
 
-		$repo_html  = $this->render_field('Repository',  $this->params->repo,  
-			'https://github.com/' . $this->params->owner . '/' . $this->params->repo . '/');
-		$owner_html = $this->render_field('Owner',       $this->params->owner, 'https://github.com/' . $this->params->owner . '/');
-		$last_html  = $this->render_field('Last Commit', $last_commit);
-		$watch_html = $this->render_field('Watchers',    $watchers);
+		$fields_html = '';
+		foreach ($this->rules->fields as $field) {
+			$fields_html .= $this->render_field($field);
+		}
+
 		$clear_html = '<div class="resource-infobox-clear"></div>';
 
-		return '<div class="resource-infobox">' . $repo_html . $owner_html . $last_html . $watch_html . $clear_html . '</div>';
+		return '<div class="resource-infobox">' . $fields_html . $clear_html . '</div>';
 	}
 }
 
@@ -125,7 +134,7 @@ function resource_infobox_styles() {
 		clear: both;
 	}
 
-	.resource-infobox-name {
+	.resource-infobox-label {
 		font-weight: bold;
 		float: left;
 		width: 25%;
