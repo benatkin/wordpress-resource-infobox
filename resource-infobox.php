@@ -25,27 +25,67 @@ Author URI: http://benatkin.com/
 License: GPL2
 */
 
-function resource_infobox_field( $name, $value, $url="" ) {
-	$safe_url = esc_url( $url );
-	if ($safe_url) {
-		return '<div class="resource-infobox-field">'
-			. '<span class="resource-infobox-name">' . esc_attr( $name ) . '</span>'
-			. '<a class="resource-infobox-value" href="' . $safe_url . '">'
-			. esc_attr($value) . '</a></div>';
-	} else {
-		return '<div class="resource-infobox-field">'
-			. '<span class="resource-infobox-name">' . esc_attr( $name ) . '</span>'
-			. '<span class="resource-infobox-value">' . esc_attr( $value ) . '</span></div>';
+class ResourceInfobox {
+	function __construct( $url ) {
+		$this->url = $url;
 	}
-}
 
-function resource_infobox_get_data( $url ) {
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_TIMEOUT_MS, 1500);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	$result = curl_exec($ch);
-	return json_decode($result);
+	function fetch_rules() {
+		$description_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'descriptions.json';
+		$this->rules = json_decode(file_get_contents($description_file));
+	}
+
+	function extract_params() {
+		$pattern = '/^https?:\\/\\/github\\.com\\/([\w-]+)\\/([\w-]+)/';
+		preg_match( $pattern, $this->url, $matches );
+		$this->params = (object) array(
+			'owner' => $matches[1],
+			'repo' => $matches[2]
+		);
+
+		$this->api_url = 'http://github.com/api/v2/json/repos/show/' . $this->params->{'owner'} . '/' . $this->params->{'repo'};
+	}
+
+	function fetch_data() {
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_TIMEOUT_MS, 1500);
+		curl_setopt($ch, CURLOPT_URL, $this->api_url);
+		$result = curl_exec($ch);
+		$this->data = json_decode($result);
+	}
+
+	function render_field( $name, $value, $url="" ) {
+		$safe_url = esc_url( $url );
+		if ($safe_url) {
+			return '<div class="resource-infobox-field">'
+				. '<span class="resource-infobox-name">' . esc_attr( $name ) . '</span>'
+				. '<a class="resource-infobox-value" href="' . $safe_url . '">'
+				. esc_attr($value) . '</a></div>';
+		} else {
+			return '<div class="resource-infobox-field">'
+				. '<span class="resource-infobox-name">' . esc_attr( $name ) . '</span>'
+				. '<span class="resource-infobox-value">' . esc_attr( $value ) . '</span></div>';
+		}
+	}
+
+	function render() {
+		$watchers = '';
+		$last_commit = '';
+		if ( ! ( property_exists( $this->data, 'error' ) ) ) {
+			$watchers = $this->data->{'repository'}->{'watchers'};
+			$last_commit = date('Y-m-d', strtotime($this->data->{'repository'}->{'pushed_at'}));
+		}
+
+		$repo_html  = $this->render_field('Repository',  $this->params->repo,  
+			'https://github.com/' . $this->params->owner . '/' . $this->params->repo . '/');
+		$owner_html = $this->render_field('Owner',       $this->params->owner, 'https://github.com/' . $this->params->owner . '/');
+		$last_html  = $this->render_field('Last Commit', $last_commit);
+		$watch_html = $this->render_field('Watchers',    $watchers);
+		$clear_html = '<div class="resource-infobox-clear"></div>';
+
+		return '<div class="resource-infobox">' . $repo_html . $owner_html . $last_html . $watch_html . $clear_html . '</div>';
+	}
 }
 
 function resource_infobox_shortcode( $atts ) {
@@ -53,27 +93,14 @@ function resource_infobox_shortcode( $atts ) {
 		'url' => ''
 	), $atts);
 
-	$pattern = '/^https?:\\/\\/github\\.com\\/([\w-]+)\\/([\w-]+)/';
-	preg_match( $pattern, $atts['url'], $matches );
-	$owner = $matches[1];
-	$repo = $matches[2];
+	$url = $atts['url'];
 
-	$json_url = 'http://github.com/api/v2/json/repos/show/' . $owner . '/' . $repo;
-	$data = resource_infobox_get_data( $json_url );
-	$watchers = '';
-	$last_commit = '';
-	if ( ! ( property_exists( $data, 'error' ) ) ) {
-		$watchers = $data->{'repository'}->{'watchers'};
-		$last_commit = date('Y-m-d', strtotime($data->{'repository'}->{'pushed_at'}));
-	}
+	$infobox = new ResourceInfobox($url);
+	$infobox->fetch_rules();
+	$infobox->extract_params();
+	$infobox->fetch_data();
+	$html = $infobox->render();
 
-	$repo_html  = resource_infobox_field('Repository',  $repo,  'https://github.com/' . $owner . '/' . $repo . '/');
-	$owner_html = resource_infobox_field('Owner',       $owner, 'https://github.com/' . $owner . '/');
-	$last_html  = resource_infobox_field('Last Commit', $last_commit);
-	$watch_html = resource_infobox_field('Watchers',    $watchers);
-	$clear_html = '<div class="resource-infobox-clear"></div>';
-
-	$html = '<div class="resource-infobox">' . $repo_html . $owner_html . $last_html . $watch_html . $clear_html . '</div>';
 	return $html;
 }
 
