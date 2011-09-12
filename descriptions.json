@@ -18,8 +18,7 @@
           "label": "Last Commit",
           "path": "repository/pushed_at",
           "type": "date",
-          "format": "Y-m-d",
-          "url": "https://github.com/{{owner}}/"
+          "format": "Y-m-d"
         },
         {
           "label": "Last Commit",
