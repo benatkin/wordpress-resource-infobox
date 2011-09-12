@@ -21,7 +21,7 @@
           "format": "Y-m-d"
         },
         {
-          "label": "Last Commit",
+          "label": "Watchers",
           "path": "repository/watchers"
         }
       ]
