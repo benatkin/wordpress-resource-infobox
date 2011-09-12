@@ -1,6 +1,6 @@
-=== Resource Info Box ===
+=== Resource Infobox ===
 Contributors: benatkin
-Tags: info, REST, shortcode, embed, infobox
+Tags: info, REST, shortcode, embed, resource, infobox
 Requires at least: 3.2.0
 Tested up to: 3.2
 Stable tag: 0.1
