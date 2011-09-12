@@ -1,0 +1,31 @@
+{
+  "github": {
+    "repository": {
+      "url": "https://github.com/:owner/:repository",
+      "api_url": "http://github.com/api/v2/json/repos/show/:owner/:repo",
+      "fields": [
+        {
+          "label": "Repository",
+          "param": "repository",
+          "url": "https://github.com/:owner/:repository/"
+        },
+        {
+          "label": "Owner",
+          "param": "owner",
+          "url": "https://github.com/:owner/"
+        },
+        {
+          "label": "Last Commit",
+          "path": "repository/pushed_at",
+          "type": "date",
+          "format": "Y-m-d",
+          "url": "https://github.com/{{owner}}/"
+        },
+        {
+          "label": "Last Commit",
+          "path": "repository/watchers"
+        }
+      ]
+    }
+  }
+}
