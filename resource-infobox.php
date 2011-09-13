@@ -55,6 +55,19 @@ class ResourceInfobox {
 		$this->data = json_decode($result);
 	}
 
+	function data_at_path( $path ) {
+		$keys = explode('/', $path);
+		$value = $this->data;
+		while (count($keys) > 0) {
+			$key = urldecode(array_shift($keys));
+			if (! is_object($value)) {
+				return null;
+			}
+			$value = $value->{$key};
+		}
+		return $value;
+	}
+
 	function render_field( $field ) {
 		$label = $field->label;
 		$value = '';
@@ -62,6 +75,20 @@ class ResourceInfobox {
 		if ( property_exists( $field, 'param' ) ) {
 			if ( property_exists( $this->params, $field->param ) ) {
 				$value = $this->params->{ $field->param };
+			}
+		} else if ( property_exists( $field, 'path' ) ) {
+			$value = $this->data_at_path( $field->path );
+		}
+
+		if (property_exists($field, 'type')) {
+			if ($field->type == "date") {
+				$value = strtotime($value);
+				if (property_exists($field, 'format')) {
+					$format = $field->format;
+				} else {
+					$format = 'Y-m-d';
+				}
+				$value = date($format, $value);
 			}
 		}
 
