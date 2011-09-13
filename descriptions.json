@@ -7,7 +7,7 @@
         {
           "label": "Repository",
           "param": "repo",
-          "url": "https://github.com/:owner/:repository/"
+          "url": "https://github.com/:owner/:repo/"
         },
         {
           "label": "Owner",

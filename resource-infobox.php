@@ -79,6 +79,9 @@ class ResourceInfobox {
 		} else if ( property_exists( $field, 'path' ) ) {
 			$value = $this->data_at_path( $field->path );
 		}
+		if (! $value) {
+			return "";
+		}
 
 		if (property_exists($field, 'type')) {
 			if ($field->type == "date") {
@@ -89,6 +92,13 @@ class ResourceInfobox {
 					$format = 'Y-m-d';
 				}
 				$value = date($format, $value);
+			}
+		}
+
+		if (property_exists($field, 'url')) {
+			$url = $field->url;
+			foreach ($this->params as $param => $param_value) {
+				$url = preg_replace(sprintf("/:%s/", $param), $param_value, $url);
 			}
 		}
 
@@ -106,13 +116,6 @@ class ResourceInfobox {
 	}
 
 	function render() {
-		$watchers = '';
-		$last_commit = '';
-		if ( ! ( property_exists( $this->data, 'error' ) ) ) {
-			$watchers = $this->data->{'repository'}->{'watchers'};
-			$last_commit = date('Y-m-d', strtotime($this->data->{'repository'}->{'pushed_at'}));
-		}
-
 		$fields_html = '';
 		foreach ($this->rules->fields as $field) {
 			$fields_html .= $this->render_field($field);
