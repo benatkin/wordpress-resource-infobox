@@ -1,7 +1,7 @@
 {
   "github": {
     "repository": {
-      "url": "https://github.com/:owner/:repository",
+      "url": "https://github.com/:owner/:repo",
       "api_url": "http://github.com/api/v2/json/repos/show/:owner/:repo",
       "fields": [
         {

@@ -35,15 +35,40 @@ class ResourceInfobox {
 		$this->rules = json_decode(file_get_contents($description_file))->github->repository;
 	}
 
-	function extract_params() {
-		$pattern = '/^https?:\\/\\/github\\.com\\/([\w-]+)\\/([\w-]+)/';
-		preg_match( $pattern, $this->url, $matches );
-		$this->params = (object) array(
-			'owner' => $matches[1],
-			'repo' => $matches[2]
-		);
+	function variable_matched($matches) {
+		array_push($this->url_variables, substr($matches[0], 2));
+		return '([\w-]+)';
+	}
 
-		$this->api_url = 'http://github.com/api/v2/json/repos/show/' . $this->params->{'owner'} . '/' . $this->params->{'repo'};
+	function extract_url_params($pattern, $url) {
+		$params = (object) array();
+		$this->url_variables = array();
+
+		$pattern = preg_quote($pattern, '/');
+		$pattern = preg_replace_callback('/\\\\:[\w-]+/', array(&$this, 'variable_matched'), $pattern);
+		$pattern = sprintf('/%s/', $pattern);
+
+		preg_match($pattern, $this->url, $matches);
+		array_shift($matches);
+
+		$n = min(count($matches), count($this->url_variables));
+		for ($i = 0; $i < $n; $i++) {
+			$params->{$this->url_variables[$i]} = $matches[$i];
+		}
+
+		return $params;
+	}
+
+	function replace_url_params($url) {
+		foreach ($this->params as $param => $param_value) {
+			$url = preg_replace(sprintf("/:%s/", $param), $param_value, $url);
+		}
+		return $url;
+	}
+
+	function find_resource() {
+		$this->params = $this->extract_url_params($this->rules->url, $this->url);
+		$this->api_url = $this->replace_url_params($this->rules->api_url);
 	}
 
 	function fetch_data() {
@@ -60,10 +85,11 @@ class ResourceInfobox {
 		$value = $this->data;
 		while (count($keys) > 0) {
 			$key = urldecode(array_shift($keys));
-			if (! is_object($value)) {
+			if (is_object($value) && property_exists($value, $key)) {
+				$value = $value->{$key};
+			} else {
 				return null;
 			}
-			$value = $value->{$key};
 		}
 		return $value;
 	}
@@ -96,10 +122,7 @@ class ResourceInfobox {
 		}
 
 		if (property_exists($field, 'url')) {
-			$url = $field->url;
-			foreach ($this->params as $param => $param_value) {
-				$url = preg_replace(sprintf("/:%s/", $param), $param_value, $url);
-			}
+			$url = $this->replace_url_params($field->url);
 		}
 
 		$safe_url = esc_url( $url );
@@ -136,7 +159,7 @@ function resource_infobox_shortcode( $atts ) {
 
 	$infobox = new ResourceInfobox($url);
 	$infobox->fetch_rules();
-	$infobox->extract_params();
+	$infobox->find_resource();
 	$infobox->fetch_data();
 	$html = $infobox->render();
 
