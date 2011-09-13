@@ -150,53 +150,62 @@ class ResourceInfobox {
 	}
 }
 
-function resource_infobox_shortcode( $atts ) {
-	$atts = shortcode_atts(array(
-		'url' => ''
-	), $atts);
+class ResourceInfoboxPlugin {
+	function __construct() {
+	}
 
-	$url = $atts['url'];
+	function setup() {
+		add_shortcode('resource-infobox', array(&$this, 'shortcode'));
+		add_action('wp_head', array(&$this, 'styles'));
+	}
 
-	$infobox = new ResourceInfobox($url);
-	$infobox->fetch_rules();
-	$infobox->find_resource();
-	$infobox->fetch_data();
-	$html = $infobox->render();
+	function shortcode($atts) {
+		$atts = shortcode_atts(array(
+			'url' => ''
+		), $atts);
 
-	return $html;
+		$url = $atts['url'];
+
+		$infobox = new ResourceInfobox($url);
+		$infobox->fetch_rules();
+		$infobox->find_resource();
+		$infobox->fetch_data();
+		$html = $infobox->render();
+
+		return $html;
+	}
+
+	function styles() {
+		?>
+		<style type="text/css" id="resource-infobox-styles">
+			.resource-infobox {
+				padding: 5px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				background-color: #ddd;
+				width: 95%;
+			}
+
+			.resource-infobox-field {
+				clear: both;
+			}
+
+			.resource-infobox-clear {
+				clear: both;
+			}
+
+			.resource-infobox-label {
+				font-weight: bold;
+				float: left;
+				width: 25%;
+				margin-right: 0.2em;
+			}
+		</style>
+		<?php
+	}
 }
 
-add_shortcode( 'resource-infobox', 'resource_infobox_shortcode' );
-
-function resource_infobox_styles() {
-?>
-<style type="text/css" id="resource-infobox-styles">
-	.resource-infobox {
-		padding: 5px;
-		margin-top: 5px;
-		margin-bottom: 5px;
-		background-color: #ddd;
-		width: 95%;
-	}
-
-	.resource-infobox-field {
-		clear: both;
-	}
-
-	.resource-infobox-clear {
-		clear: both;
-	}
-
-	.resource-infobox-label {
-		font-weight: bold;
-		float: left;
-		width: 25%;
-		margin-right: 0.2em;
-	}
-</style>
-<?php
-}
-
-add_action( 'wp_head', 'resource_infobox_styles' );
+$resource_infobox_plugin = new ResourceInfoboxPlugin();
+$resource_infobox_plugin->setup();
 
 ?>
