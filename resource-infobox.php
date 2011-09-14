@@ -156,7 +156,7 @@ class ResourceInfoboxPlugin {
 
 	function setup() {
 		add_shortcode('resource-infobox', array(&$this, 'shortcode'));
-		add_action('wp_head', array(&$this, 'styles'));
+		add_action('wp_print_styles', array(&$this, 'styles'));
 		add_action('admin_menu', array(&$this, 'setup_admin_menu'));
 	}
 
@@ -177,32 +177,9 @@ class ResourceInfoboxPlugin {
 	}
 
 	function styles() {
-		?>
-		<style type="text/css" id="resource-infobox-styles">
-			.resource-infobox {
-				padding: 5px;
-				margin-top: 5px;
-				margin-bottom: 5px;
-				background-color: #ddd;
-				width: 95%;
-			}
-
-			.resource-infobox-field {
-				clear: both;
-			}
-
-			.resource-infobox-clear {
-				clear: both;
-			}
-
-			.resource-infobox-label {
-				font-weight: bold;
-				float: left;
-				width: 25%;
-				margin-right: 0.2em;
-			}
-		</style>
-		<?php
+		$css_url = plugins_url('resource-infobox.css', __FILE__);
+		wp_register_style('resource-infobox', $css_url);
+		wp_enqueue_style('resource-infobox');
 	}
 
 	function setup_admin_menu() {

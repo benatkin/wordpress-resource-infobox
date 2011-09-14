@@ -1,0 +1,23 @@
+.resource-infobox {
+  padding: 5px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  background-color: #ddd;
+  width: 95%;
+}
+
+.resource-infobox-field {
+  clear: both;
+}
+
+.resource-infobox-clear {
+  clear: both;
+}
+
+.resource-infobox-label {
+  font-weight: bold;
+  float: left;
+  width: 25%;
+  margin-right: 0.2em;
+}
+
