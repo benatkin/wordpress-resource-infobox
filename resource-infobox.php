@@ -157,6 +157,7 @@ class ResourceInfoboxPlugin {
 	function setup() {
 		add_shortcode('resource-infobox', array(&$this, 'shortcode'));
 		add_action('wp_head', array(&$this, 'styles'));
+		add_action('admin_menu', array(&$this, 'setup_admin_menu'));
 	}
 
 	function shortcode($atts) {
@@ -202,6 +203,22 @@ class ResourceInfoboxPlugin {
 			}
 		</style>
 		<?php
+	}
+
+	function setup_admin_menu() {
+		add_submenu_page('options-general.php', 'Resource Infobox', 'Resource Infobox',
+			'manage_options', 'resource-infobox', array(&$this, 'settings'));
+	}
+
+	function settings() {
+		$description_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'descriptions.json';
+		$rules = file_get_contents($description_file);
+?>
+<div class="wrap">
+<h2>Resource Infobox Settings</h2>
+<textarea readonly style="height: 30em; width: 95%;"><?php echo esc_attr($rules); ?></textarea>
+</div>
+<?php
 	}
 }
 
