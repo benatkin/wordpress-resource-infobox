@@ -183,8 +183,19 @@ class ResourceInfoboxPlugin {
 	}
 
 	function setup_admin_menu() {
-		add_submenu_page('options-general.php', 'Resource Infobox', 'Resource Infobox',
+		$page = add_options_page('Resource Infobox', 'Resource Infobox',
 			'manage_options', 'resource-infobox', array(&$this, 'settings'));
+		add_action('admin_print_styles-' . $page, array(&$this, 'admin_enqueue_scripts'));
+	}
+
+	function admin_enqueue_scripts() {
+		$js_url = plugins_url('resource-infobox-admin.js', __FILE__);
+		wp_register_script('resource-infobox-admin', $js_url);
+		wp_enqueue_script('resource-infobox-admin');
+
+		$css_url = plugins_url('resource-infobox-admin-styles.css', __FILE__);
+		wp_register_style('resource-infobox-admin-styles', $css_url);
+		wp_enqueue_style('resource-infobox-admin-styles');
 	}
 
 	function settings() {
