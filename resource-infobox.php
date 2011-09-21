@@ -26,13 +26,15 @@ License: GPL2
 */
 
 class ResourceInfobox {
-	function __construct( $url ) {
+	function __construct( $url, $plugin ) {
 		$this->url = $url;
+		$this->plugin = $plugin;
 	}
 
-	function fetch_rules() {
+	function fetch_resource_definition() {
 		$description_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'descriptions.json';
-		$this->rules = json_decode(file_get_contents($description_file))->github->repository;
+		$this->resource_definition = json_decode(file_get_contents($description_file))->github->repository;
+		$this->resource_definition = $this->plugin->resource_definition_collection->find($this->url);
 	}
 
 	function variable_matched($matches) {
@@ -67,8 +69,8 @@ class ResourceInfobox {
 	}
 
 	function find_resource() {
-		$this->params = $this->extract_url_params($this->rules->url, $this->url);
-		$this->api_url = $this->replace_url_params($this->rules->api_url);
+		$this->params = $this->extract_url_params($this->resource_definition->url, $this->url);
+		$this->api_url = $this->replace_url_params($this->resource_definition->api_url);
 	}
 
 	function fetch_data() {
@@ -140,7 +142,7 @@ class ResourceInfobox {
 
 	function render() {
 		$fields_html = '';
-		foreach ($this->rules->fields as $field) {
+		foreach ($this->resource_definition->fields as $field) {
 			$fields_html .= $this->render_field($field);
 		}
 
@@ -150,8 +152,25 @@ class ResourceInfobox {
 	}
 }
 
+class ResourceInfoboxDefinition {
+	function __construct() {
+	}
+}
+
+class ResourceInfoboxDefinitionCollection {
+	function __construct() {
+		$description_file = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'descriptions.json';
+		$this->data = json_decode(file_get_contents($description_file));
+	}
+
+	function find($url) {
+		return $this->data->github->repository;
+	}
+}
+
 class ResourceInfoboxPlugin {
 	function __construct() {
+		$this->resource_definition_collection = new ResourceInfoboxDefinitionCollection();
 	}
 
 	function setup() {
@@ -167,8 +186,8 @@ class ResourceInfoboxPlugin {
 
 		$url = $atts['url'];
 
-		$infobox = new ResourceInfobox($url);
-		$infobox->fetch_rules();
+		$infobox = new ResourceInfobox($url, $this);
+		$infobox->fetch_resource_definition();
 		$infobox->find_resource();
 		$infobox->fetch_data();
 		$html = $infobox->render();
