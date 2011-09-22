@@ -25,6 +25,25 @@
           "path": "repository/watchers"
         }
       ]
+    },
+    "user": {
+      "url": "https://github.com/:username",
+      "api_url": "http://github.com/api/v2/json/user/show/:username",
+      "fields": [
+        {
+          "label": "Username",
+          "param": "username",
+          "url": "https://github.com/:username/"
+        },
+        {
+          "label": "Followers",
+          "path": "user/followers_count"
+        },
+        {
+          "label": "Respositories",
+          "path": "user/public_repo_count"
+        }
+      ]
     }
   }
 }

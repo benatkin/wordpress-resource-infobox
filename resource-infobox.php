@@ -37,30 +37,6 @@ class ResourceInfobox {
 		$this->resource_definition = $this->plugin->resource_definition_collection->find($this->url);
 	}
 
-	function variable_matched($matches) {
-		array_push($this->url_variables, substr($matches[0], 2));
-		return '([\w-]+)';
-	}
-
-	function extract_url_params($pattern, $url) {
-		$params = (object) array();
-		$this->url_variables = array();
-
-		$pattern = preg_quote($pattern, '/');
-		$pattern = preg_replace_callback('/\\\\:[\w-]+/', array(&$this, 'variable_matched'), $pattern);
-		$pattern = sprintf('/%s/', $pattern);
-
-		preg_match($pattern, $this->url, $matches);
-		array_shift($matches);
-
-		$n = min(count($matches), count($this->url_variables));
-		for ($i = 0; $i < $n; $i++) {
-			$params->{$this->url_variables[$i]} = $matches[$i];
-		}
-
-		return $params;
-	}
-
 	function replace_url_params($url) {
 		foreach ($this->params as $param => $param_value) {
 			$url = preg_replace(sprintf("/:%s/", $param), $param_value, $url);
@@ -69,8 +45,10 @@ class ResourceInfobox {
 	}
 
 	function find_resource() {
-		$this->params = $this->extract_url_params($this->resource_definition->url, $this->url);
-		$this->api_url = $this->replace_url_params($this->resource_definition->api_url);
+		$this->params = $this->resource_definition->extract_url_params($this->url);
+		if ($this->params) {
+			$this->api_url = $this->replace_url_params($this->resource_definition->api_url);
+		}
 	}
 
 	function fetch_data() {
@@ -127,7 +105,7 @@ class ResourceInfobox {
 			$url = $this->replace_url_params($field->url);
 		}
 
-		$safe_url = esc_url( $url );
+		$safe_url = esc_url($url);
 		if ($safe_url) {
 			return '<div class="resource-infobox-field">'
 				. '<span class="resource-infobox-label">' . esc_attr( $label ) . '</span>'
@@ -153,8 +131,41 @@ class ResourceInfobox {
 }
 
 class ResourceInfoboxDefinition {
-	function __construct() {
+	function __construct($data) {
+		$this->url = $data->url;
+		$this->api_url = $data->api_url;
+		$this->fields = $data->fields;
 	}
+
+	function variable_matched($matches) {
+		array_push($this->url_variables, substr($matches[0], 2));
+		return '([\w-]+)';
+	}
+
+	function extract_url_params($url) {
+		$pattern = $this->url;
+		$params = (object) array();
+		$this->url_variables = array();
+
+		$pattern = preg_quote($pattern, '/');
+		$pattern = preg_replace_callback('/\\\\:[\w-]+/', array(&$this, 'variable_matched'), $pattern);
+		$pattern = sprintf('/%s/', $pattern);
+
+		preg_match($pattern, $url, $matches);
+		if (count($matches) === 0) {
+			return 0;
+		}
+
+		array_shift($matches);
+
+		$n = min(count($matches), count($this->url_variables));
+		for ($i = 0; $i < $n; $i++) {
+			$params->{$this->url_variables[$i]} = $matches[$i];
+		}
+
+		return $params;
+	}
+
 }
 
 class ResourceInfoboxDefinitionCollection {
@@ -164,7 +175,14 @@ class ResourceInfoboxDefinitionCollection {
 	}
 
 	function find($url) {
-		return $this->data->github->repository;
+		foreach ($this->data as $service_name => $service_data) {
+			foreach ($service_data as $definition_name => $definition_data) {
+				$definition = new ResourceInfoboxDefinition($definition_data);
+				if ($definition->extract_url_params($url)) {
+					return $definition;
+				}
+			}
+		}
 	}
 }
 
@@ -188,6 +206,10 @@ class ResourceInfoboxPlugin {
 
 		$infobox = new ResourceInfobox($url, $this);
 		$infobox->fetch_resource_definition();
+		if (! $infobox->resource_definition) {
+			return "";
+		}
+
 		$infobox->find_resource();
 		$infobox->fetch_data();
 		$html = $infobox->render();
