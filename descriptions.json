@@ -2,7 +2,7 @@
   "github": {
     "repository": {
       "url": "https://github.com/:owner/:repo",
-      "api_url": "http://github.com/api/v2/json/repos/show/:owner/:repo",
+      "api_url": "https://api.github.com/repos/:owner/:repo",
       "fields": [
         {
           "label": "Repository",
@@ -16,13 +16,13 @@
         },
         {
           "label": "Last Commit",
-          "path": "repository/pushed_at",
+          "path": "pushed_at",
           "type": "date",
           "format": "Y-m-d"
         },
         {
           "label": "Watchers",
-          "path": "repository/watchers"
+          "path": "watchers"
         }
       ]
     },
